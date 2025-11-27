@@ -2,6 +2,9 @@ package com.springbatch.migracaodados.step;
 
 import org.springframework.batch.core.Step;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.step.builder.SimpleStepBuilder;
+import org.springframework.batch.integration.async.AsyncItemProcessor;
+import org.springframework.batch.integration.async.AsyncItemWriter;
 import org.springframework.batch.item.ItemProcessor;
 import org.springframework.batch.item.ItemReader;
 import org.springframework.batch.item.ItemWriter;
@@ -15,23 +18,18 @@ import com.springbatch.migracaodados.dominio.Pessoa;
 
 @Configuration
 public class MigrarPessoaStepConfig {
-  @Autowired
-  private StepBuilderFactory stepBuilderFactory;
+	@Autowired
+	private StepBuilderFactory stepBuilderFactory;
 
-  @Autowired
-  @Qualifier("transactionManagerApp")
-  private PlatformTransactionManager transactionManagerApp;
+	@Autowired
+	@Qualifier("transactionManagerApp")
+	private PlatformTransactionManager transactionManagerApp;
 
-  @Bean
-  public Step migrarPessoaStep(ItemReader<Pessoa> arquivoPessoaReader, ItemWriter<Pessoa> pessoaWriter,
-      ItemProcessor<Pessoa, Pessoa> pessoaProcessor) {
-    return stepBuilderFactory
-        .get("migrarPessoaStep")
-        .<Pessoa, Pessoa>chunk(1000)
-        .reader(arquivoPessoaReader)
-        .processor(pessoaProcessor)
-        .writer(pessoaWriter)
-        .transactionManager(transactionManagerApp)
-        .build();
-  }
+	@Bean
+	public Step migrarPessoaStep(ItemReader<Pessoa> arquivoPessoaReader, AsyncItemWriter<Pessoa> pessoaWriter,
+			AsyncItemProcessor<Pessoa, Pessoa> pessoaProcessor) {
+		return ((SimpleStepBuilder<Pessoa, Pessoa>) stepBuilderFactory.get("migrarPessoaStep")
+				.<Pessoa, Pessoa>chunk(1000).reader(arquivoPessoaReader).processor((ItemProcessor) pessoaProcessor)
+				.writer(pessoaWriter).transactionManager(transactionManagerApp)).build();
+	}
 }
