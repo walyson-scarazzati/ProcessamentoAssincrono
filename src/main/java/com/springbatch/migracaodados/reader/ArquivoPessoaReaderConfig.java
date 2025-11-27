@@ -1,5 +1,7 @@
 package com.springbatch.migracaodados.reader;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.springframework.batch.item.file.FlatFileItemReader;
@@ -35,7 +37,15 @@ public class ArquivoPessoaReaderConfig {
 				Pessoa pessoa = new Pessoa();
 				pessoa.setNome(fieldSet.readString("nome"));
 				pessoa.setEmail(fieldSet.readString("email"));
-				pessoa.setDataNascimento(new Date(fieldSet.readDate("dataNascimento", "yyyy-MM-dd HH:mm:ss").getTime()));
+
+				String dataNascimentoStr = fieldSet.readString("dataNascimento");
+				SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				try {
+					pessoa.setDataNascimento(new Date(dateFormat.parse(dataNascimentoStr).getTime()));
+				} catch (ParseException e) {
+					throw new IllegalArgumentException("Unparseable date: \"" + dataNascimentoStr + "\", format: [" + dateFormat.toPattern() + "], name: [dataNascimento]", e);
+				}
+
 				pessoa.setIdade(fieldSet.readInt("idade"));
 				pessoa.setId(fieldSet.readInt("id"));
 				return pessoa;
